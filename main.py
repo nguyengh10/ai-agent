@@ -13,6 +13,7 @@ def main():
     if api_key is None:
         raise RuntimeError("api key not found")
 
+    # get model
     client = OpenAI(
     base_url="https://openrouter.ai/api/v1",
     api_key=api_key,
@@ -29,35 +30,52 @@ def main():
         {"role": "user", "content": args.user_prompt},
     ]
     
+    # let the agent iterate on a task until done
+    for _ in range(20):
+        # call the model and get response object
+        response = client.chat.completions.create(
+            model="openrouter/free",
+            messages=messages,
+            tools=available_functions,
+        )
+        # get function calls
+        message = response.choices[0].message
+        # update message history with agent's response
+        messages.append(message)
 
-    # get response object
-    response = client.chat.completions.create(
-        model="openrouter/free",
-        messages=messages,
-        tools=available_functions,
-    )
-    # get function calls
-    message = response.choices[0].message
+        if response.usage is None:
+            raise RuntimeError("failed api request")
 
-    # call functions
-    if message.tool_calls:
-        for tool_call in message.tool_calls:
-            function_args = json.loads(tool_call.function.arguments or "{}")
-            result_message = call_function(tool_call, args.verbose)
+        # handle function calls
+        if message.tool_calls:
+            for tool_call in message.tool_calls:
+                function_args = json.loads(tool_call.function.arguments or "{}")
+                result_message = call_function(tool_call, args.verbose)
 
-            # if content is empty
-            if not result_message["content"]:
-                raise Exception("Error: function call failed")
-    if response.usage is None:
-        raise RuntimeError("failed api request")
+                # add function calls to message history
+                messages.append(result_message)
+
+                # if content is empty
+                if not result_message["content"]:
+                    raise Exception("Error: function call failed")
+        # no function call -> final response
+        else:
+            print("Final response:")
+            # handle verbose
+            if args.verbose:
+                print(f"User prompt: {messages[1]["content"]}")
+                print(f"Prompt tokens: {response.usage.prompt_tokens}")
+                print(f"Response tokens: {response.usage.completion_tokens}")
+                print(f"-> {result_message['content']}")
+            print(response.choices[0].message.content)
+            return
+            
+    # no response after max iterations
+    print("Error: agent reached maximum iterations")
+    sys.exit(10)
     
-    # print token usage and response
-    if args.verbose:
-        print(f"User prompt: {messages[1]["content"]}")
-        print(f"Prompt tokens: {response.usage.prompt_tokens}")
-        print(f"Response tokens: {response.usage.completion_tokens}")
-        print(f"-> {result_message['content']}")
-    print(response.choices[0].message.content)
+    
+    
 
 
 if __name__ == "__main__":
