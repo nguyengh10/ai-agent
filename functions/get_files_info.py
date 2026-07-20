@@ -1,5 +1,31 @@
 import os
 
+schema_get_files_info = {
+    "type": "function",
+    "function": {
+        "name": "get_files_info",
+        "description": ("List the files and directories in a directory within the working "
+            "directory. Returns each item's name, size, and whether it is a file "
+            "or directory. Use this when the user asks to view, inspect, or list "
+            "the contents of a directory."
+            "Use this only when the user asks to list or browse a directory. "
+    "Do not use this to read the contents of a file."),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "directory": {
+                    "type": "string",
+                    "description": ("The directory to inspect, specified as a path relative "
+                    "to the working directory. Use '.' to inspect the working directory itself."
+                    "Read and return the contents of a file. "
+                    "Use this when the user asks to read, open, display, or get the "
+                    "contents of a specific file."),
+                },
+            },
+        },
+    },
+}
+
 def get_files_info(working_directory: str, directory: str=".") -> str:
     # get absolute path to target directory
     working_dir_abs = os.path.abspath(working_directory)

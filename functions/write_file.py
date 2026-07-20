@@ -1,5 +1,32 @@
 import os
 
+schema_write_file = {
+    "type": "function",
+    "function": {
+        "name": "write_file",
+        "description": ("Write content to a file within the working directory. "
+            "Creates the file and any necessary parent directories if they "
+            "do not exist, or overwrites the existing file if it does. "
+            "Use this when the user asks to create, write, save, update, "
+            "or overwrite a file."),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "file_path": {
+                    "type": "string",
+                    "description": ("The path of the file to write, specified relative "
+                        "to the working directory."),
+                },
+                "content": {
+                    "type": "string",
+                    "description": ("The complete text content to write to the file. "
+                        "Any existing contents of the file will be replaced.")
+                }
+            },
+        },
+    },
+}
+
 def write_file(working_directory: str, file_path: str, content: str) -> str:
     # get absolute path to target directory
     working_dir_abs = os.path.abspath(working_directory)
